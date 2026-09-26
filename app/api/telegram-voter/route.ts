@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    // Security check
     const secret = req.headers.get("x-webhook-secret");
 
     if (secret !== process.env.WEBHOOK_SECRET) {
@@ -13,8 +12,6 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-
-    // Supabase webhook में record के अंदर data आता है
     const record = body.record || body;
 
     const name = record.name || "";
@@ -22,20 +19,16 @@ export async function POST(req: NextRequest) {
     const mobile = record.mobile || "";
     const createdAt = record.created_at || new Date().toISOString();
 
-    // Indian date/time
-    const dateTime = new Date(createdAt).toLocaleString(
-      "en-IN",
-      {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }
-    );
+    const dateTime = new Date(createdAt).toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
 
     const message = `🗳️ नई Voter Search Entry
 
@@ -54,7 +47,7 @@ export async function POST(req: NextRequest) {
       throw new Error("Telegram environment variables missing");
     }
 
-    const telegramResponse = await fetch(
+    const response = await fetch(
       `https://api.telegram.org/bot${botToken}/sendMessage`,
       {
         method: "POST",
@@ -68,32 +61,27 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    const telegramData = await telegramResponse.json();
+    const data = await response.json();
 
-    if (!telegramResponse.ok) {
-      console.error("Telegram Error:", telegramData);
+    if (!response.ok) {
+      console.error("Telegram error:", data);
 
       return NextResponse.json(
-        {
-          error: "Telegram message failed",
-          details: telegramData,
-        },
+        { error: "Telegram failed", details: data },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      telegram: telegramData,
+      telegram: data,
     });
 
   } catch (error) {
-    console.error("Telegram webhook error:", error);
+    console.error("API error:", error);
 
     return NextResponse.json(
-      {
-        error: "Server error",
-      },
+      { error: "Server error" },
       { status: 500 }
     );
   }
