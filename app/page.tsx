@@ -33,7 +33,70 @@ const quotes = [
   "“पारदर्शिता और जवाबदेही से ही बेहतर पंचायत बनती है।”",
   "“शिक्षा, विकास और जनहित — पंचायत की प्राथमिकता।”",
   "“हर नागरिक की समस्या को सुनना और समझना जरूरी है।”",
+  "जात-पात की न बात होगी, गांव में विकास की बरसात होगी।",
+  "सोच नई, उम्मीद नई, गांव में प्रगति की लहर है नई।",
+  "ईमानदार चेहरा, पक्का इरादा, विकास का है हमारा वादा।",
+  "बदलाव की ओर कदम, आपके साथ हरदम।",
+  "विकास हमारी पहचान, गांव हमारा स्वाभिमान।",
+  "ईमानदारी को ईनाम दो,छुपकर नहीं सरेआम दो,स्वच्छ छवि वालों को,पंचायत की कमान दो"
+  ,
 ];
+
+
+// ==============================
+// VOTER SLIP SEARCH
+// ==============================
+
+const [epicSearch, setEpicSearch] = useState("");
+const [voterLoading, setVoterLoading] = useState(false);
+const [voterError, setVoterError] = useState("");
+const [voterResult, setVoterResult] = useState<any>(null);
+
+const searchVoter = async () => {
+  setVoterError("");
+  setVoterResult(null);
+
+  const epic = epicSearch.trim().toUpperCase();
+
+  if (!epic) {
+    setVoterError("कृपया EPIC Number दर्ज करें।");
+    return;
+  }
+
+  setVoterLoading(true);
+
+  try {
+    const response = await fetch("/voter-index.json");
+
+    if (!response.ok) {
+      throw new Error("Voter data नहीं मिली");
+    }
+
+    const voters = await response.json();
+
+    const result = voters.find(
+      (v: any) => v.epic?.toUpperCase() === epic
+    );
+
+    if (!result) {
+      setVoterError(
+        "इस EPIC Number का रिकॉर्ड voter list में नहीं मिला।"
+      );
+      return;
+    }
+
+    setVoterResult(result);
+
+  } catch (error) {
+    console.error(error);
+
+    setVoterError(
+      "Voter data load नहीं हो पाई। कृपया दोबारा प्रयास करें।"
+    );
+  } finally {
+    setVoterLoading(false);
+  }
+};
 
 const [quoteIndex, setQuoteIndex] = useState(0);
 
@@ -337,6 +400,13 @@ useEffect(() => {
               जन समस्या
             </a>
 
+<a
+  href="#voter-slip"
+  className="hover:text-yellow-300 transition"
+>
+  🗳️ Voter Slip
+</a>
+
           </div>
 
           {/* MOBILE MENU BUTTON */}
@@ -402,7 +472,13 @@ useEffect(() => {
             >
               जन समस्या
             </a>
-
+<a
+  href="#voter-slip"
+  onClick={() => setMenuOpen(false)}
+  className="block py-2 font-bold hover:text-yellow-300"
+>
+  🗳️ Voter Slip
+</a>
           </div>
         )}
 
@@ -414,7 +490,7 @@ useEffect(() => {
 
       <section
   id="home"
-  className="relative z-10 min-h-[90vh]"
+  className="relative z-10 min-h-0"
 >
         <div className="w-full flex justify-center pt-8 mb-7 px-2">
           <div className="w-full max-w-5xl overflow-hidden rounded-2xl bg-white/80 border border-sky-200 shadow-md">
@@ -429,7 +505,7 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto w-full px-5 py-16">
+        <div className="max-w-7xl mx-auto w-full px-5 py-8 md:py-16">
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
@@ -531,11 +607,177 @@ useEffect(() => {
 
   </section>
 
+{/* ==================================================
+    VOTER SLIP SEARCH
+================================================== */}
+
+<section
+  id="voter-slip"
+  className="relative z-10 px-5 py-12 md:py-16"
+>
+  <div className="max-w-4xl mx-auto">
+
+    <div className="rounded-3xl border-2 border-sky-300 bg-white shadow-2xl p-6 md:p-10">
+
+      {/* HEADER */}
+
+      <div className="text-center">
+
+        <div className="text-5xl mb-4">
+          🗳️
+        </div>
+
+        <h2 className="text-3xl md:text-4xl font-black text-sky-900">
+          अपनी Voter Slip खोजें
+        </h2>
+
+        <p className="mt-3 text-slate-600 font-semibold">
+          अपना EPIC Number दर्ज करके मतदाता सूची में अपना रिकॉर्ड खोजें।
+        </p>
+
+      </div>
+
+      {/* SEARCH */}
+
+      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+
+        <input
+          type="text"
+          value={epicSearch}
+          onChange={(e) =>
+            setEpicSearch(
+              e.target.value
+                .toUpperCase()
+                .replace(/\s/g, "")
+            )
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              searchVoter();
+            }
+          }}
+          placeholder="EPIC Number जैसे SMK1521228"
+          className="flex-1 px-5 py-4 rounded-xl bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold text-lg uppercase outline-none focus:border-sky-500"
+        />
+
+        <button
+          onClick={searchVoter}
+          disabled={voterLoading}
+          className="px-7 py-4 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-black text-lg shadow-lg disabled:opacity-60"
+        >
+          {voterLoading
+            ? "🔎 खोज रहे हैं..."
+            : "🔎 Search"}
+        </button>
+
+      </div>
+
+      {/* ERROR */}
+
+      {voterError && (
+        <div className="mt-5 rounded-xl bg-red-100 border-2 border-red-300 px-5 py-4 text-red-700 font-bold text-center">
+          ⚠️ {voterError}
+        </div>
+      )}
+
+      {/* RESULT */}
+
+      {voterResult && (
+        <div
+          id="voter-slip-print"
+          className="mt-8 rounded-2xl border-2 border-sky-300 bg-sky-50 p-6"
+        >
+
+          <div className="text-center border-b-2 border-sky-200 pb-5">
+
+            <h3 className="text-2xl font-black text-sky-900">
+              मतदाता विवरण
+            </h3>
+
+            <p className="mt-1 text-sm text-slate-500">
+              ग्राम पंचायत बांसनी जोजावर
+            </p>
+
+          </div>
+
+          {/* BASIC DETAILS */}
+
+          <div className="mt-6 grid sm:grid-cols-2 gap-4">
+
+            <div className="bg-white rounded-xl p-4 border">
+              <p className="text-sm text-slate-500 font-semibold">
+                EPIC Number
+              </p>
+
+              <p className="mt-1 text-lg font-black text-sky-900">
+                {voterResult.epic}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 border">
+              <p className="text-sm text-slate-500 font-semibold">
+                PDF
+              </p>
+
+              <p className="mt-1 text-sm font-bold text-slate-800 break-all">
+                {voterResult.pdf}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 border">
+              <p className="text-sm text-slate-500 font-semibold">
+                Page Number
+              </p>
+
+              <p className="mt-1 text-lg font-black text-sky-900">
+                {voterResult.page}
+              </p>
+            </div>
+
+          </div>
+
+          
+          {/* BUTTONS */}
+
+          <div className="mt-6 grid sm:grid-cols-2 gap-3">
+            <button
+  onClick={() => {
+
+    const url =
+      `/api/voter-slip` +
+      `?pdf=${encodeURIComponent(
+        voterResult.pdf
+      )}` +
+      `&page=${voterResult.page}` +
+      `&epic=${encodeURIComponent(
+        voterResult.epic
+      )}`;
+
+    window.open(
+      url,
+      "_blank"
+    );
+
+  }}
+  className="py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-black shadow-lg transition"
+>
+  📥 Voter Slip Download
+</button>
+          </div>
+        </div>
+      )}
+
+    </div>
+
+  </div>
+</section>
+
+
       {/* ==============================
           LUCKY DRAW SECTION
       ============================== */}
 
-      <section className="relative z-10 px-5 py-16">
+      <section className="relative z-10 px-5 pt-4 pb-16 md:pt-16">
 
         <div className="max-w-5xl mx-auto">
 
@@ -545,9 +787,7 @@ useEffect(() => {
               🎁
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-black text-sky-900">
-              Lucky Draw
-            </h2>
+            
 
             <p className="mt-5 text-lg md:text-xl text-slate-700 font-semibold leading-relaxed">
               कालू राम मीणा को अपना समर्थन देने के लिए नीचे दिए गए बटन पर क्लिक करें!
